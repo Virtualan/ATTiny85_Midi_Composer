@@ -1,7 +1,7 @@
 // last mod 2/12/2018 - Alan Smith
 
-/* Program size: 8,118 bytes (used 99% of a 8,192 byte maximum) (0.99 secs)
-Minimum Memory Usage: 403 bytes (79% of a 512 byte maximum)*/
+/* Program size: 8,160 bytes (used 100% of a 8,192 byte maximum) (1.88 secs)
+Minimum Memory Usage: 354 bytes (69% of a 512 byte maximum)*/
 
 
 #include <SendOnlySoftwareSerial.h>
@@ -111,26 +111,11 @@ void setup() {
 	gsReset();  // reset the Boss DR-330 synth and switch to multitimberal mode
 	delay(1000); //GS Reset needs a delay 
 	randomSeed(analogRead(LDRPin));
-	//minimum set-up
-	//for (byte x = 0; x < arraySizeSet; x++) {
-	//	pianoArray[x] = wr();
-	//	windArray[x] = wr();
-	//	bassArray[x] = wr();
-	//	////	//delay(50);
-	//	//NoteOn(x % 16, pianoArray[x], 100);
-	//	//delay(30);
-	//	//	//NoteOff(x % 16, pianoArray[x]);
-
-	//}
-
-	//delay(4000);
-
+	
 	//set up channel stuff
 	for (byte x = 0; x < channels; x++) {
 		CC(x, 123, 0);  //all notes off
 		CC(x, 121, 0);  //reset controllers
-		//chordArray[x%chordArraySizeSet] = rp() % 9;
-		//keys[x%keyArraySizeSet] = rp() % 12;
 		ProgChange(x, random(119));
 		makeChanges();
 	}
@@ -277,10 +262,10 @@ void loop() {
 		}
 
 		//WIND - ch 2
-		if ((bitRead(playControl, 8)) && ((sc % ((unsigned long)(wbeat << 1)) == 0) || (windPatt >> sc % 32ul & 1))) {//
+		if ((bitRead(playControl, 8)) && ((sc % ((unsigned long)(wbeat << 2)) == 0) || (windPatt >> sc % 32ul & 1))) {//
 			NoteOff(windChan, windNote); //
 			windNote = ScaleFilter(scale, kn + 36 +
-				(((pianoNote + 7) % 12) + (windArray[(windIndex += wbeat) % (arraySize >> wbeat)]) % 50), kn);
+				(((pianoNote + 7) % 12) + (windArray[(windIndex += (wbeat)) % (arraySize >> wbeat)]) % 50), kn);
 			NoteOn(windChan, windNote, hr());  //*******************NOTE ON*********************
 		}
 
@@ -317,7 +302,7 @@ void loop() {
 		}
 
 		straightCount++;
-		tickCount++;//+=beat;//
+		tickCount2+= (pianoNote % beat);//++;//+=beat;//
 		tickTime2 = (unsigned long)(millis() + (tuneSpeed2)); //  the other Time
 	}  // end of fast loop if - tunespeed 2 - the fast parts
 
@@ -403,7 +388,7 @@ void makeChanges() {
 		playControl = random(0xFFFFU);
 		break;
 	case 6:
-		ProgChange(bassChan, random(33, 40)); //
+		ProgChange(bassChan, rp()+33); //
 		break;
 	case 7:
 		ProgChange(pianoChan, random(119));
@@ -412,7 +397,7 @@ void makeChanges() {
 		ProgChange(windChan, random(119));//random(56, 95)
 		break;
 	case 9:
-		ProgChange(drumChan, random(7) * 8);
+		ProgChange(drumChan, rp()%7 * 8);
 		break;
 	case 10:
 		windPatt = randomPatt(llp);
@@ -457,7 +442,7 @@ void makeChanges() {
 		ProgChange(synthChan, random(119)); // random(58, 96)
 		break;
 	case 23:
-		playControl |= (1 << (rp() % 16)); // build up players
+		//spare
 		break;
 	case 24:
 		NoteOff(windChan, windNote); //need to stop current note
@@ -466,7 +451,6 @@ void makeChanges() {
 	case 25:
 		playControl = 1;
 		break;
-		//empty
 	case 27:
 		bassPatt |= 1 << rp();
 		break;
@@ -478,7 +462,7 @@ void makeChanges() {
 		lightChan = randomChan();   //because we change the channel
 		break;
 	case 30:
-		arraySize = random(8, arraySizeSet); // 4 to ArraySize
+		arraySize = random(8, arraySizeSet+1); // 8 to 31
 		break;
 	case 31:
 		beat = tr() + 1;  //random(arraySize >> 1) + 1;// (lr() % 14) + 1;  //
